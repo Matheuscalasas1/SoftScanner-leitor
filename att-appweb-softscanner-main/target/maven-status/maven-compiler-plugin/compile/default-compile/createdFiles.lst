@@ -1,0 +1,13 @@
+com\softscanner\soft\Movimentacao.class
+com\softscanner\soft\controller\LeituraController.class
+com\softscanner\soft\service\LeituraService.class
+com\softscanner\soft\controller\RadioController$RegistroController.class
+com\softscanner\soft\dto\RegistroDTO.class
+com\softscanner\soft\SoftApplication.class
+com\softscanner\soft\controller\RadioController.class
+com\softscanner\soft\dto\LeituraResponse.class
+com\softscanner\soft\repository\RegistroRepository.class
+com\softscanner\soft\controller\ApiController.class
+com\softscanner\soft\controller\RegistroController.class
+com\softscanner\soft\entity\Registro.class
+com\softscanner\soft\service\RegistroService.class

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Controle de Rádios</title>
+<link rel="stylesheet" th:href="@{/css/home.css}">
+<style>
+    /* Estilos para o select de setor */
+    
+</style>
+</head>
+
+<body>
+
+<h2>📡 Scanner Ativo - Controle de Rádios</h2>
+
+<!-- DASHBOARD DE ESTATÍSTICAS -->
+<div class="dashboard">
+    <div class="card-estatistica">
+        <div class="card-icon" style="background: rgba(59, 130, 246, 0.1);">
+            <span style="color: #3b82f6;">🔵</span>
+        </div>
+        <div class="card-content">
+            <div class="card-value" id="totalRadios">0</div>
+            <div class="card-label">Total de Rádios</div>
+        </div>
+    </div>
+    
+    <div class="card-estatistica">
+        <div class="card-icon" style="background: rgba(34, 197, 94, 0.1);">
+            <span style="color: #22c55e;">🟢</span>
+        </div>
+        <div class="card-content">
+            <div class="card-value" id="radiosDisponiveis">0</div>
+            <div class="card-label">Disponíveis</div>
+        </div>
+    </div>
+    
+    <div class="card-estatistica">
+        <div class="card-icon" style="background: rgba(239, 68, 68, 0.1);">
+            <span style="color: #ef4444;">🔴</span>
+        </div>
+        <div class="card-content">
+            <div class="card-value" id="radiosOcupados">0</div>
+            <div class="card-label">Ocupados</div>
+        </div>
+    </div>
+</div>
+
+<!-- Campo do scanner -->
+<input id="serial" placeholder="Leia o código de barras" autofocus autocomplete="off">
+
+<!-- Formulário para dados da empresa -->
+<div id="formEmpresa" class="hidden">
+    <h3>📋 Informações da Empresa</h3>
+    
+    <div class="form-group">
+        <label>Setor *</label>
+        <select id="setor" required>
+            <option value="">Selecione o setor...</option>
+            <option value="Rádio">📻 Rádio</option>
+            <option value="Segurança">🛡️ Segurança</option>
+            <option value="Manutenção">🔧 Manutenção</option>
+            <option value="Limpeza">🧹 Limpeza</option>
+            <option value="Recepção">👋 Recepção</option>
+            <option value="Logística">🚚 Logística</option>
+            <option value="Produção">🏭 Produção</option>
+            <option value="Outro">🔖 Outro</option>
+        </select>
+        <input type="text" id="outroSetor" class="hidden" placeholder="Especifique outro setor">
+    </div>
+    
+    <div class="form-group">
+        <label>Acessórios *</label>
+        <select id="acessorios" required>
+            <option value="">Selecione o acessório...</option>
+            <option value="Alça">Alça </option>
+            <option value="Capa">Capa </option>
+            <option value="Clipe">Clipe </option>
+            <option value="Fone">Fone </option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Responsável *</label>
+        <input type="text" id="responsavel" placeholder="Nome do responsável" autocomplete="off" required>
+    </div>
+    
+    <div class="form-group">
+        <label>Telefone *</label>
+        <input type="tel" id="telefone" placeholder="(11) 99999-9999" autocomplete="off" required>
+    </div>
+
+    
+    <button id="btnRegistrar">Registrar Saída</button>
+</div>
+
+<!-- Busca de serial -->
+<input id="buscaSerial" placeholder="Buscar serial ou Responsável">
+<button class="btn-buscar" onclick="buscarRadioOuResponsavel()">Buscar</button>
+
+<h3 id="status"></h3>
+
+<div id="formObservacao" class="hidden">
+    <h3>📝 Observação na Devolução</h3>
+
+    <div class="form-group">
+        <label>Observação do Retorno</label>
+        <textarea id="observacaoRetorno"
+                  placeholder="Ex: rádio com defeito, faltando fone, bateria fraca..."
+                  rows="3"></textarea>
+    </div>
+
+    <button id="btnSalvarObservacao">Salvar Observação</button>
+</div>
+
+
+<!-- TABELA -->
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>SERIAL</th>
+            <th>SETOR</th>
+            <th>ACESSÓRIO</th>
+            <th>RESPONSÁVEL</th>
+            <th>TELEFONE</th>
+            <th>DATA SAÍDA</th>
+            <th>DATA RETORNO</th>
+            <th>STATUS</th>
+            <th>OBSERVAÇÃO</th>
+        </tr>
+    </thead>
+    <tbody id="planilha">
+        <tr th:each="reg, stat : ${registros}">
+            <td th:text="${stat.count}"></td>
+            <td th:text="${reg.serial}"></td>
+            <td th:text="${reg.setor}"></td>
+            <td th:text="${reg.acessorio}"></td>
+            <td th:text="${reg.responsavel}"></td>
+            <td th:text="${reg.telefone}"></td>
+            <td th:text="${reg.dataSaida != null ? #temporals.format(reg.dataSaida, 'dd/MM/yyyy HH:mm:ss') : ''}"></td>
+            <td th:text="${reg.dataRetorno != null ? #temporals.format(reg.dataRetorno, 'dd/MM/yyyy HH:mm:ss') : ''}"></td>
+            <td th:class="${reg.dataRetorno == null ? 'status em-uso' : 'status livre'}"
+                th:text="${reg.dataRetorno == null ? '🔴 EM USO' : '🟢 LIVRE'}">
+            </td>
+            <td th:text="${reg.observacao}"></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ÁREA DE GERENCIAMENTO -->
+<div class="gerenciamento-container">
+    <h3>🗑️ Gerenciamento de Registros</h3>
+    
+    <div class="controles-exclusao">
+        <div class="controle-exclusao">
+            <input type="text" id="serialParaExcluir" placeholder="Digite o serial para excluir">
+            <button class="btn-excluir" onclick="excluirPorSerial()">Excluir por Serial</button>
+        </div>
+        
+        <div class="controle-exclusao">
+            <button class="btn-atualizar" onclick="atualizarTabelaCompleta()">🔄 Atualizar Tabela</button>
+        </div>
+    </div>
+    
+    <p id="mensagemExclusao" class="mensagem-exclusao"></p>
+</div>
+
+<script>
+
+// ===============================
+// VARIÁVEIS GLOBAIS
+// ===============================
+const serialInput = document.getElementById("serial");
+const formEmpresa = document.getElementById("formEmpresa");
+const acessoriosInput = document.getElementById("acessorios");
+const responsavelInput = document.getElementById("responsavel");
+const telefoneInput = document.getElementById("telefone");
+const setorSelect = document.getElementById("setor");
+const outroSetorInput = document.getElementById("outroSetor");
+const status = document.getElementById("status");
+const planilha = document.getElementById("planilha");
+const btnRegistrar = document.getElementById("btnRegistrar");
+const formObservacao = document.getElementById("formObservacao");
+const observacaoRetornoInput = document.getElementById("observacaoRetorno");
+const btnSalvarObservacao = document.getElementById("btnSalvarObservacao");
+
+let ultimoSerialLido = "";
+let serialParaObservacao = "";
+
+serialInput.focus();
+
+// ===============================
+// EVENTOS DE TECLADO / CLIQUE
+// ===============================
+serialInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        processarLeitura();
+    }
+});
+
+btnRegistrar.addEventListener("click", registrarSaida);
+btnSalvarObservacao.addEventListener("click", salvarObservacaoRetorno);
+
+document.getElementById("buscaSerial").addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        buscarRadioOuResponsavel();
+    }
+});
+
+document.getElementById("serialParaExcluir").addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        excluirPorSerial();
+    }
+});
+
+// ESC cancela
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
+        limparCampos();
+        status.innerText = "✋ Operação cancelada";
+    }
+});
+
+// ===============================
+// SETOR "OUTRO"
+// ===============================
+setorSelect.addEventListener("change", () => {
+    if (setorSelect.value === "Outro") {
+        outroSetorInput.classList.remove("hidden");
+        outroSetorInput.focus();
+    } else {
+        outroSetorInput.classList.add("hidden");
+        outroSetorInput.value = "";
+    }
+});
+
+// ===============================
+// PROCESSA LEITURA DO SCANNER
+// ===============================
+function processarLeitura() {
+    const serial = serialInput.value.trim();
+    if (!serial) return;
+
+    fetch("/api/ler", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ serial })
+    })
+    .then(r => r.json())
+    .then(d => {
+
+        // SAÍDA
+        if (d.tipo === "SAIDA") {
+            status.innerText = "➡️ Rádio LIVRE — informe os dados";
+            formEmpresa.classList.remove("hidden");
+            formObservacao.classList.add("hidden");
+            ultimoSerialLido = serial;
+            setorSelect.focus();
+            return;
+        }
+
+        // RETORNO
+        if (d.tipo === "RETORNO") {
+            status.innerText = "⬅️ Rádio EM USO — informe observação";
+            formEmpresa.classList.add("hidden");
+            formObservacao.classList.remove("hidden");
+            serialParaObservacao = serial;
+            observacaoRetornoInput.focus();
+            return;
+        }
+
+        status.innerText = "❌ Erro inesperado";
+    })
+    .catch(err => {
+        console.error(err);
+        status.innerText = "❌ Erro ao comunicar com servidor";
+    });
+}
+
+// ===============================
+// REGISTRAR SAÍDA
+// ===============================
+function registrarSaida() {
+    const setor = setorSelect.value === "Outro"
+        ? outroSetorInput.value.trim()
+        : setorSelect.value;
+
+    const acessorios = acessoriosInput.value.trim();
+    const responsavel = responsavelInput.value.trim();
+    const telefone = telefoneInput.value.trim();
+
+    if (!setor || !acessorios || !responsavel || !telefone) {
+        alert("Preencha todos os campos obrigatórios!");
+        return;
+    }
+
+    fetch(`/api/ler?serial=${ultimoSerialLido}`
+        + `&acessorios=${encodeURIComponent(acessorios)}`
+        + `&responsavel=${encodeURIComponent(responsavel)}`
+        + `&telefone=${encodeURIComponent(telefone)}`
+        + `&setor=${encodeURIComponent(setor)}`, {
+        method: "POST"
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.tipo === "SAIDA_OK") {
+            status.innerText = "✅ Saída registrada";
+            limparCampos();
+            atualizarTabelaComEstatisticas();
+        } else {
+            status.innerText = "❌ Erro ao registrar saída";
+        }
+    });
+}
+
+// ===============================
+// SALVAR OBSERVAÇÃO DE RETORNO
+// ===============================
+function salvarObservacaoRetorno() {
+    const observacao = observacaoRetornoInput.value.trim();
+
+    fetch("/api/retorno", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            serial: serialParaObservacao,
+            observacao
+        })
+    })
+    .then(r => r.text())
+    .then(msg => {
+        status.innerText = msg;
+        formObservacao.classList.add("hidden");
+        observacaoRetornoInput.value = "";
+        serialParaObservacao = "";
+        serialInput.focus();
+        atualizarTabelaComEstatisticas();
+    })
+    .catch(err => {
+        console.error(err);
+        status.innerText = "❌ Erro ao salvar observação";
+    });
+}
+
+function buscarRadioOuResponsavel() {
+    const termo = document.getElementById("buscaSerial").value.trim().toLowerCase();
+    if (!termo) return;
+
+    removerDestaques();
+
+    let encontrados = 0;
+
+    [...planilha.rows].forEach(linha => {
+        const serial = linha.cells[1]?.innerText.toLowerCase();
+        const resp = linha.cells[4]?.innerText.toLowerCase();
+
+        if (serial?.includes(termo) || resp?.includes(termo)) {
+            encontrados++;
+
+            // Aplica destaque
+            linha.classList.add("destaque-busca");
+
+            // Remove após 3 segundos com transição suave
+            setTimeout(() => {
+                linha.classList.add("remover-destaque");
+
+                setTimeout(() => {
+                    linha.classList.remove("destaque-busca");
+                    linha.classList.remove("remover-destaque");
+                }, 1000); // tempo da transição
+            }, 3000); // tempo visível
+        }
+    });
+
+    status.innerText = encontrados
+        ? `✅ ${encontrados} resultado(s)`
+        : "❌ Nenhum resultado";
+}
+
+
+// ===============================
+// REMOVER DESTAQUES
+// ===============================
+function removerDestaques() {
+    document.querySelectorAll(".destaque-busca")
+        .forEach(l => l.classList.remove("destaque-busca"));
+}
+
+// ===============================
+// EXCLUSÃO
+// ===============================
+function excluirPorSerial() {
+    const serial = document.getElementById("serialParaExcluir").value.trim();
+    if (!serial) return;
+
+    if (!confirm("Confirma exclusão?")) return;
+
+    fetch(`/api/excluir-serial/${serial}`, { method: "DELETE" })
+        .then(r => r.text())
+        .then(msg => {
+            status.innerText = msg;
+            atualizarTabelaComEstatisticas();
+        });
+}
+
+// ===============================
+// LIMPAR CAMPOS
+// ===============================
+function limparCampos() {
+    serialInput.value = "";
+    acessoriosInput.value = "";
+    responsavelInput.value = "";
+    telefoneInput.value = "";
+    setorSelect.value = "";
+    outroSetorInput.value = "";
+    formEmpresa.classList.add("hidden");
+    formObservacao.classList.add("hidden");
+    ultimoSerialLido = "";
+}
+
+// ===============================
+// TABELA / ESTATÍSTICAS
+// ===============================
+function atualizarTabelaComEstatisticas() {
+    fetch("/home")
+        .then(r => r.text())
+        .then(html => {
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            planilha.innerHTML = doc.querySelector("#planilha").innerHTML;
+            atualizarEstatisticas();
+        });
+}
+
+function atualizarEstatisticas() {
+    fetch("/api/estatisticas")
+        .then(r => r.json())
+        .then(e => {
+            document.getElementById("totalRadios").innerText = e.totalUnicos;
+            document.getElementById("radiosOcupados").innerText = e.ocupados;
+            document.getElementById("radiosDisponiveis").innerText = e.disponiveis;
+        });
+}
+
+
+// ===============================
+// INIT
+// ===============================
+window.addEventListener("load", atualizarEstatisticas);
+
+function exportarParaExcel() {
+    window.location.href = "/exportar-excel";
+}
+
+
+
+</script>
+
+<button class="btn-exportar" onclick="exportarParaExcel()">
+    📊 Exportar para Excel
+</button>
+
+<footer class="footer">
+    <span>© 2026 • SoftComp • Controle de Rádios</span>
+</footer>
+
+</body>
+</html>
