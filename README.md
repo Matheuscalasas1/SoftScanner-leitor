@@ -31,15 +31,15 @@ Build: Maven
 
 📋 Pré-requisitos Antes de executar o projeto, certifique-se de ter instalado:
 
-Java JDK 21 ou superior
+Java JDK 21 
 
-MySQL 8.0 ou superior
+MySQL 8.0 
 
 Maven 3.6+
 
 Git
 
-IDE (IntelliJ IDEA, Eclipse ou VS Code)
+IDE: VS Code
 
 ⚙️ Configuração do Banco de Dados
 
